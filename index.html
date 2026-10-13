@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Core Tracker Tools</title>
+  <meta name="description" content="Stopwatch with lap splits, titled countdown timer and Pomodoro sprints. Works offline.">
+  <meta name="color-scheme" content="dark light">
+  <meta name="theme-color" content="#121212" id="meta-theme">
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Core Tracker">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+  <!-- Favicons -->
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="icon" href="icon-192.png" type="image/png" sizes="192x192">
+  <link rel="apple-touch-icon" href="icon-192.png">
+
+  <!-- Apply saved theme before first paint (prevents a dark/light flash) -->
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem('core-tracker:theme');
+        if (t !== 'light' && t !== 'dark') {
+          t = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+        }
+        document.documentElement.dataset.theme = t;
+        document.getElementById('meta-theme').content = t === 'light' ? '#f8f9fa' : '#121212';
+      } catch (e) {}
+    })();
+  </script>
+
+  <link rel="stylesheet" href="style.css">
+  <script src="script.js" defer></script>
+</head>
+<body>
+  <div class="app">
+
+    <!-- Top bar: theme switch, top right -->
+    <header class="topbar">
+      <button class="icon-btn" id="theme-toggle" type="button" role="switch"
+              aria-checked="true" aria-label="Dark mode">
+        <svg class="icon icon--moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5z"/></svg>
+        <svg class="icon icon--sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/></svg>
+      </button>
+    </header>
+
+    <!-- Profile card -->
+    <section class="profile">
+      <div class="badge" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 9.5v4l2.5 1.5M9.5 3h5M12 3v3"/></svg>
+      </div>
+      <h1 class="profile__name">Core Tracker Tools</h1>
+      <p class="profile__bio">Stay sharp, track precisely</p>
+      <div class="profile__actions">
+        <button class="cta cta--primary" id="quick-start" type="button">Quick Start</button>
+        <button class="cta cta--secondary" id="reset-all" type="button">Reset All</button>
+        <button class="cta cta--install" id="install-btn" type="button" hidden>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7 10.5l5 5 5-5M5 20h14"/></svg>
+          Download App
+        </button>
+      </div>
+    </section>
+
+    <!-- Segment tabs -->
+    <nav class="tabs" id="tabs" role="tablist" aria-label="Tools">
+      <span class="tabs__pill" aria-hidden="true"></span>
+      <button class="tab" role="tab" type="button" id="tab-stopwatch" data-tab="stopwatch" aria-selected="true"  aria-controls="panel-stopwatch">Stopwatch</button>
+      <button class="tab" role="tab" type="button" id="tab-timer"     data-tab="timer"     aria-selected="false" aria-controls="panel-timer" tabindex="-1">Timer</button>
+      <button class="tab" role="tab" type="button" id="tab-sprints"   data-tab="sprints"   aria-selected="false" aria-controls="panel-sprints" tabindex="-1">Sprints</button>
+      <button class="tab" role="tab" type="button" id="tab-log"       data-tab="log"       aria-selected="false" aria-controls="panel-log" tabindex="-1">Log</button>
+    </nav>
+
+    <main>
+
+      <!-- ========== Stopwatch ========== -->
+      <section class="panel" id="panel-stopwatch" role="tabpanel" aria-labelledby="tab-stopwatch">
+        <div class="group display" id="sw-card" data-state="ready">
+          <p class="status"><span class="dot" aria-hidden="true"></span><span id="sw-status">Ready</span></p>
+          <div class="clock" id="sw-display" role="timer" aria-label="Stopwatch"><span id="sw-main">00:00:00</span><span class="clock__cs" id="sw-cs">.00</span></div>
+        </div>
+
+        <h2 class="group-title">Controls</h2>
+        <div class="group">
+          <div class="row">
+            <span class="row__label">Stopwatch</span>
+            <span class="row__actions">
+              <button class="btn btn--sm btn--start" id="sw-start" type="button">Start</button>
+              <button class="btn btn--sm btn--stop" id="sw-stop" type="button" disabled>Stop</button>
+            </span>
+          </div>
+          <div class="row">
+            <span class="row__label">Lap split</span>
+            <span class="row__actions"><button class="btn btn--sm btn--accent" id="sw-lap" type="button" disabled>Lap</button></span>
+          </div>
+          <div class="row">
+            <span class="row__label">Time and laps</span>
+            <span class="row__actions"><button class="btn btn--sm btn--reset" id="sw-reset" type="button">Reset</button></span>
+          </div>
+        </div>
+
+        <h2 class="group-title">Lap splits <span class="count" id="lap-count"></span></h2>
+        <div class="group">
+          <ol class="list list--scroll" id="lap-list"></ol>
+        </div>
+      </section>
+
+      <!-- ========== Timer ========== -->
+      <section class="panel" id="panel-timer" role="tabpanel" aria-labelledby="tab-timer" hidden>
+        <div class="group display" id="tm-card" data-state="ready">
+          <p class="status"><span class="dot" aria-hidden="true"></span><span id="tm-status">Ready</span></p>
+          <p class="display__title" id="tm-label">Countdown</p>
+          <div class="clock" id="tm-display" role="timer" aria-label="Countdown timer">05:00</div>
+          <ct-progress id="tm-progress" aria-label="Timer progress"></ct-progress>
+          <div class="display__tools">
+            <button class="btn btn--sm btn--accent" id="tm-mini" type="button" aria-pressed="false">Mini-player</button>
+          </div>
+        </div>
+
+        <h2 class="group-title">Timer details</h2>
+        <div class="group">
+          <label class="row">
+            <span class="row__label">Title</span>
+            <input class="input input--title" id="tm-title" type="text" maxlength="40"
+                   placeholder="Editing Retainer Work" autocomplete="off" enterkeyhint="done">
+          </label>
+          <label class="row">
+            <span class="row__label">Minutes</span>
+            <input class="input input--num" id="tm-min" type="number" inputmode="numeric" min="0" max="999" step="1" value="5">
+          </label>
+          <label class="row">
+            <span class="row__label">Seconds</span>
+            <input class="input input--num" id="tm-sec" type="number" inputmode="numeric" min="0" max="59" step="1" value="0">
+          </label>
+        </div>
+
+        <h2 class="group-title">Title presets</h2>
+        <div class="group">
+          <div class="chips" id="tm-presets">
+            <button class="chip" type="button" data-title="Editing Retainer Work" data-m="50" data-s="0">Editing Retainer Work <small>50:00</small></button>
+            <button class="chip" type="button" data-title="Deep Work" data-m="25" data-s="0">Deep Work <small>25:00</small></button>
+            <button class="chip" type="button" data-title="Gym Set" data-m="1" data-s="30">Gym Set <small>1:30</small></button>
+            <button class="chip" type="button" data-title="Tea" data-m="3" data-s="0">Tea <small>3:00</small></button>
+          </div>
+        </div>
+
+        <h2 class="group-title">Alerts</h2>
+        <div class="group">
+          <div class="row">
+            <span class="row__main">
+              <label class="row__label" for="opt-sound">Alert sound</label>
+              <span class="row__meta">Also used for sprint blocks</span>
+            </span>
+            <span class="row__actions">
+              <select class="select" id="opt-sound">
+                <option value="classic">Classic Beep</option>
+                <option value="chime">Digital Chime</option>
+                <option value="gentle">Gentle Alert</option>
+              </select>
+              <button class="btn btn--sm btn--accent" id="opt-preview" type="button">Preview</button>
+            </span>
+          </div>
+          <label class="row">
+            <span class="row__main">
+              <span class="row__label">Flash Screen on Finish</span>
+              <span class="row__meta">Pulses until you dismiss the alert</span>
+            </span>
+            <input class="switch" id="opt-flash" type="checkbox" role="switch">
+          </label>
+        </div>
+
+        <h2 class="group-title">Controls</h2>
+        <div class="group">
+          <div class="row">
+            <span class="row__label">Timer</span>
+            <span class="row__actions">
+              <button class="btn btn--sm btn--start" id="tm-start" type="button">Start</button>
+              <button class="btn btn--sm btn--stop" id="tm-stop" type="button" disabled>Stop</button>
+            </span>
+          </div>
+          <div class="row">
+            <span class="row__label">Back to the set time</span>
+            <span class="row__actions"><button class="btn btn--sm btn--reset" id="tm-reset" type="button">Reset</button></span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========== Sprints ========== -->
+      <section class="panel" id="panel-sprints" role="tabpanel" aria-labelledby="tab-sprints" hidden>
+        <div class="group display" id="sp-card" data-state="ready" data-phase="work">
+          <p class="status"><span class="dot" aria-hidden="true"></span><span id="sp-status">Ready</span></p>
+          <div class="clock" id="sp-display" role="timer" aria-label="Sprint timer">25:00</div>
+          <ct-progress id="sp-phase-bar" aria-label="Current block progress"></ct-progress>
+          <div class="display__tools">
+            <button class="btn btn--sm btn--accent" id="sp-mini" type="button" aria-pressed="false">Mini-player</button>
+          </div>
+        </div>
+
+        <h2 class="group-title">Session progress</h2>
+        <div class="group">
+          <div class="row row--stack">
+            <span class="row__label">Sprints done</span>
+            <span class="row__value" id="sp-done">0 of 4</span>
+          </div>
+          <div class="row row--bar"><ct-progress id="sp-session-bar" aria-label="Session progress"></ct-progress></div>
+        </div>
+
+        <h2 class="group-title">Sprint settings</h2>
+        <div class="group">
+          <label class="row">
+            <span class="row__label">Work block (minutes)</span>
+            <input class="input input--num" id="sp-work" type="number" inputmode="numeric" min="1" max="180" step="1" value="25">
+          </label>
+          <label class="row">
+            <span class="row__label">Rest block (minutes)</span>
+            <input class="input input--num" id="sp-rest" type="number" inputmode="numeric" min="1" max="60" step="1" value="5">
+          </label>
+          <label class="row">
+            <span class="row__label">Sprints in a session</span>
+            <input class="input input--num" id="sp-rounds" type="number" inputmode="numeric" min="1" max="12" step="1" value="4">
+          </label>
+        </div>
+
+        <h2 class="group-title">Controls</h2>
+        <div class="group">
+          <div class="row">
+            <span class="row__label">Sprint session</span>
+            <span class="row__actions">
+              <button class="btn btn--sm btn--start" id="sp-start" type="button">Start</button>
+              <button class="btn btn--sm btn--stop" id="sp-stop" type="button" disabled>Stop</button>
+            </span>
+          </div>
+          <div class="row">
+            <span class="row__label">Skip this block</span>
+            <span class="row__actions"><button class="btn btn--sm btn--accent" id="sp-skip" type="button" disabled>Skip</button></span>
+          </div>
+          <div class="row">
+            <span class="row__label">End the session</span>
+            <span class="row__actions"><button class="btn btn--sm btn--reset" id="sp-reset" type="button">Reset</button></span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========== Log ========== -->
+      <section class="panel" id="panel-log" role="tabpanel" aria-labelledby="tab-log" hidden>
+        <h2 class="group-title">Summary</h2>
+        <div class="group">
+          <div class="row"><span class="row__label">Laps recorded</span><span class="row__value" id="stat-lap">0</span></div>
+          <div class="row"><span class="row__label">Timers completed</span><span class="row__value" id="stat-timer">0</span></div>
+          <div class="row"><span class="row__label">Sprints completed</span><span class="row__value" id="stat-sprint">0</span></div>
+          <div class="row"><span class="row__label">Focus time in sprints</span><span class="row__value" id="stat-focus">0 min</span></div>
+        </div>
+
+        <h2 class="group-title">History</h2>
+        <div class="group">
+          <ol class="list list--scroll list--tall" id="log-list"></ol>
+        </div>
+
+        <h2 class="group-title">Storage</h2>
+        <div class="group">
+          <div class="row">
+            <span class="row__label">Saved on this device</span>
+            <span class="row__actions"><button class="btn btn--sm btn--stop" id="log-clear" type="button">Clear history</button></span>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <div class="flash" id="flash" aria-hidden="true"></div>
+  <ct-modal id="modal"></ct-modal>
+  <ct-toast id="toast"></ct-toast>
+
+  <!-- Register the offline service worker -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('sw.js').catch(function (err) {
+          console.warn('Service worker registration failed:', err);
+        });
+      });
+    }
+  </script>
+</body>
+</html>
